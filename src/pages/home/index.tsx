@@ -6,15 +6,11 @@ import CategoryStats from '@/components/CategoryStats';
 import ConsumptionList from '@/components/ConsumptionList';
 import BudgetCard from '@/components/BudgetCard';
 import Card from '@/components/Card';
-import { useConsumptions, useBudget, useMemberInfo, useAnalysis } from '@/store';
+import { useStore } from '@/store';
 
 export default function HomePage() {
-  const { consumptions } = useConsumptions();
-  const { budget } = useBudget();
-  const [memberInfo] = useMemberInfo();
-  const { getCategoryStats } = useAnalysis(consumptions);
-  
-  const categoryStats = getCategoryStats();
+  const store = useStore();
+  const categoryStats = store.getCategoryStats();
 
   const quickActions = [
     { icon: '📝', text: '记账', path: '/pages/record/index' },
@@ -26,7 +22,7 @@ export default function HomePage() {
   return (
     <View className={styles.page}>
       <View className={`${styles.section}`}>
-        <BalanceCard balance={memberInfo.balance} memberLevel={memberInfo.memberLevel} />
+        <BalanceCard balance={store.memberInfo.balance} memberLevel={store.memberInfo.memberLevel} />
       </View>
 
       <View className={`${styles.section}`}>
@@ -43,7 +39,7 @@ export default function HomePage() {
       </View>
 
       <View className={`${styles.section}`}>
-        <BudgetCard budget={budget} />
+        <BudgetCard budget={store.budget} />
       </View>
 
       <View className={`${styles.section}`}>
@@ -56,7 +52,7 @@ export default function HomePage() {
             <Text className={styles.sectionTitle}>最近消费</Text>
             <Text className={styles.viewAll}>查看全部</Text>
           </View>
-          <ConsumptionList data={consumptions} />
+          <ConsumptionList data={store.consumptions} />
         </Card>
       </View>
     </View>

@@ -2,24 +2,21 @@ import React, { useState } from 'react';
 import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
-import { useConsumptions, useProducts } from '@/store';
-import { useAnalysis } from '@/store';
+import { useStore } from '@/store';
 
 export default function AnalysisPage() {
-  const { consumptions } = useConsumptions();
-  const { products } = useProducts();
-  const { getAnalysisData, generateQuarterlyReport, generateCostCard } = useAnalysis(consumptions);
+  const store = useStore();
   const [showReportModal, setShowReportModal] = useState(false);
   const [showCostCardModal, setShowCostCardModal] = useState(false);
   const [reportData, setReportData] = useState<any>(null);
   const [costCardData, setCostCardData] = useState<any>(null);
 
-  const analysis = getAnalysisData();
+  const analysis = store.getAnalysisData();
   const maxAmount = Math.max(...analysis.monthlyTrend.map(item => item.amount), 1);
 
-  const generateReport = () => {
+  const handleGenerateReport = () => {
     try {
-      const report = generateQuarterlyReport();
+      const report = store.generateQuarterlyReport();
       setReportData(report);
       setShowReportModal(true);
     } catch (e) {
@@ -27,9 +24,9 @@ export default function AnalysisPage() {
     }
   };
 
-  const generateCostCard = () => {
+  const handleGenerateCostCard = () => {
     try {
-      const card = generateCostCard();
+      const card = store.generateCostCard();
       setCostCardData(card);
       setShowCostCardModal(true);
     } catch (e) {
@@ -85,7 +82,7 @@ export default function AnalysisPage() {
             <View className={styles.statIcon}>
               <Text className={styles.statIconText}>📈</Text>
             </View>
-            <Text className={styles.statValue}>{products.length}</Text>
+            <Text className={styles.statValue}>{store.products.length}</Text>
             <Text className={styles.statLabel}>商品数量</Text>
           </View>
         </View>
@@ -117,7 +114,7 @@ export default function AnalysisPage() {
         <View className={styles.card}>
           <Text className={styles.sectionTitle}>涨价提醒</Text>
           <View className={styles.alertList}>
-            {products.slice(0, 2).map((item, index) => (
+            {store.products.slice(0, 2).map((item, index) => (
               <View key={index} className={styles.alertItem}>
                 <View className={styles.alertLeft}>
                   <View className={styles.alertIcon}>
@@ -136,13 +133,13 @@ export default function AnalysisPage() {
       </View>
 
       <View className={`${styles.section}`}>
-        <View className={styles.reportBtn} onClick={generateReport}>
+        <View className={styles.reportBtn} onClick={handleGenerateReport}>
           <Text>📊 生成季度账单</Text>
         </View>
       </View>
 
       <View className={`${styles.section}`}>
-        <View className={styles.reportBtn} onClick={generateCostCard}>
+        <View className={styles.reportBtn} onClick={handleGenerateCostCard}>
           <Text>🎴 生成养宠成本卡片</Text>
         </View>
       </View>

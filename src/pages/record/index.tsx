@@ -4,15 +4,14 @@ import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import type { CategoryType } from '@/types';
 import { categoryLabels } from '@/types';
-import { useConsumptions, useBudget } from '@/store';
+import { useStore } from '@/store';
 
 export default function RecordPage() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<CategoryType>('food');
   const [description, setDescription] = useState('');
   const [isEssential, setIsEssential] = useState(true);
-  const { addConsumption } = useConsumptions();
-  const { addSpent } = useBudget();
+  const store = useStore();
 
   const categories: { type: CategoryType; icon: string }[] = [
     { type: 'food', icon: '🥣' },
@@ -45,14 +44,12 @@ export default function RecordPage() {
       return;
     }
     
-    addConsumption({
+    store.addConsumption({
       type: category,
       amount: amountValue,
       description: description.trim() || categoryLabels[category],
       isEssential
     });
-    
-    addSpent(amountValue);
     
     Taro.showToast({ title: '记账成功', icon: 'success' });
     setAmount('');

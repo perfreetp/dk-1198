@@ -1,4 +1,3 @@
-import { useState, useEffect, useCallback } from 'react';
 import Taro from '@tarojs/taro';
 import type { Consumption, Product, Budget, ShoppingItem, MemberInfo, AnalysisResult, MonthlyData } from '@/types';
 import { mockConsumptions, mockProducts, mockBudget, mockShoppingList, mockMemberInfo } from '@/data/mockData';
@@ -27,108 +26,126 @@ function saveToStorage(key: string, value: unknown) {
   }
 }
 
-export function useConsumptions() {
-  const [consumptions, setConsumptions] = useState<Consumption[]>(() => 
-    loadFromStorage<Consumption[]>(STORAGE_KEYS.CONSUMPTIONS, mockConsumptions)
-  );
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.CONSUMPTIONS, consumptions);
-  }, [consumptions]);
-
-  const addConsumption = useCallback((consumption: Omit<Consumption, 'id'>) => {
+class DataStore {
+  private static instance: DataStore;
+  
+  private _consumptions: Consumption[];
+  private _products: Product[];
+  private _budget: Budget;
+  private _shoppingList: ShoppingItem[];
+  private _memberInfo: MemberInfo;
+  private _listeners: Set<() => void> = new Set();
+  
+  private constructor() {
+    this._consumptions = loadFromStorage<Consumption[]>(STORAGE_KEYS.CONSUMPTIONS, mockConsumptions);
+    this._products = loadFromStorage<Product[]>(STORAGE_KEYS.PRODUCTS, mockProducts);
+    this._budget = loadFromStorage<Budget>(STORAGE_KEYS.BUDGET, mockBudget);
+    this._shoppingList = loadFromStorage<ShoppingItem[]>(STORAGE_KEYS.SHOPPING_LIST, mockShoppingList);
+    this._memberInfo = { ...mockMemberInfo };
+  }
+  
+  static getInstance(): DataStore {
+    if (!DataStore.instance) {
+      DataStore.instance = new DataStore();
+    }
+    return DataStore.instance;
+  }
+  
+  private notify() {
+    this._listeners.forEach(listener => listener());
+  }
+  
+  subscribe(listener: () => void) {
+    this._listeners.add(listener);
+    return () => {
+      this._listeners.delete(listener);
+    };
+  }
+  
+  get consumptions() {
+    return this._consumptions;
+  }
+  
+  get products() {
+    return this._products;
+  }
+  
+  get budget() {
+    return this._budget;
+  }
+  
+  get shoppingList() {
+    return this._shoppingList;
+  }
+  
+  get memberInfo() {
+    return this._memberInfo;
+  }
+  
+  addConsumption(consumption: Omit<Consumption, 'id'>) {
     const newConsumption: Consumption = {
       ...consumption,
       id: Date.now().toString(),
       date: consumption.date || new Date().toISOString().split('T')[0]
     };
-    setConsumptions(prev => [newConsumption, ...prev]);
+    this._consumptions = [newConsumption, ...this._consumptions];
+    saveToStorage(STORAGE_KEYS.CONSUMPTIONS, this._consumptions);
+    this._budget.currentMonthSpent += consumption.amount;
+    this._budget = { ...this._budget };
+    saveToStorage(STORAGE_KEYS.BUDGET, this._budget);
+    this.notify();
     return newConsumption;
-  }, []);
-
-  return { consumptions, addConsumption, setConsumptions };
-}
-
-export function useProducts() {
-  const [products, setProducts] = useState<Product[]>(() => 
-    loadFromStorage<Product[]>(STORAGE_KEYS.PRODUCTS, mockProducts)
-  );
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.PRODUCTS, products);
-  }, [products]);
-
-  const addProduct = useCallback((product: Omit<Product, 'id' | 'shops' | 'lastPurchaseDate'>) => {
+  }
+  
+  addProduct(product: Omit<Product, 'id' | 'shops' | 'lastPurchaseDate'>) {
     const newProduct: Product = {
       ...product,
       id: Date.now().toString(),
-      unitPrice: parseFloat(product.unitPrice.toString()) || 0,
-      shops: [{ shopName: '默认店铺', price: parseFloat(product.unitPrice.toString()) || 0 }],
+      unitPrice: typeof product.unitPrice === 'string' ? parseFloat(product.unitPrice) : product.unitPrice,
+      shops: [{ shopName: '默认店铺', price: typeof product.unitPrice === 'string' ? parseFloat(product.unitPrice) : product.unitPrice }],
       lastPurchaseDate: new Date().toISOString().split('T')[0]
     };
-    setProducts(prev => [...prev, newProduct]);
+    this._products = [...this._products, newProduct];
+    saveToStorage(STORAGE_KEYS.PRODUCTS, this._products);
+    this.notify();
     return newProduct;
-  }, []);
-
-  return { products, addProduct, setProducts };
-}
-
-export function useBudget() {
-  const [budget, setBudget] = useState<Budget>(() => 
-    loadFromStorage<Budget>(STORAGE_KEYS.BUDGET, mockBudget)
-  );
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.BUDGET, budget);
-  }, [budget]);
-
-  const updateBudget = useCallback((monthlyLimit: number) => {
-    setBudget(prev => ({ ...prev, monthlyLimit }));
-  }, []);
-
-  const addSpent = useCallback((amount: number) => {
-    setBudget(prev => ({ ...prev, currentMonthSpent: prev.currentMonthSpent + amount }));
-  }, []);
-
-  return { budget, updateBudget, addSpent, setBudget };
-}
-
-export function useShoppingList() {
-  const [shoppingList, setShoppingList] = useState<ShoppingItem[]>(() => 
-    loadFromStorage<ShoppingItem[]>(STORAGE_KEYS.SHOPPING_LIST, mockShoppingList)
-  );
-
-  useEffect(() => {
-    saveToStorage(STORAGE_KEYS.SHOPPING_LIST, shoppingList);
-  }, [shoppingList]);
-
-  const toggleItem = useCallback((id: string) => {
-    setShoppingList(prev => prev.map(item => 
+  }
+  
+  updateBudget(monthlyLimit: number) {
+    this._budget = { ...this._budget, monthlyLimit };
+    saveToStorage(STORAGE_KEYS.BUDGET, this._budget);
+    this.notify();
+  }
+  
+  addSpent(amount: number) {
+    this._budget = { ...this._budget, currentMonthSpent: this._budget.currentMonthSpent + amount };
+    saveToStorage(STORAGE_KEYS.BUDGET, this._budget);
+    this.notify();
+  }
+  
+  toggleShoppingItem(id: string) {
+    this._shoppingList = this._shoppingList.map(item => 
       item.id === id ? { ...item, isChecked: !item.isChecked } : item
-    ));
-  }, []);
-
-  const addItem = useCallback((item: Omit<ShoppingItem, 'id' | 'isChecked'>) => {
+    );
+    saveToStorage(STORAGE_KEYS.SHOPPING_LIST, this._shoppingList);
+    this.notify();
+  }
+  
+  addShoppingItem(item: Omit<ShoppingItem, 'id' | 'isChecked'>) {
     const newItem: ShoppingItem = {
       ...item,
       id: Date.now().toString(),
       isChecked: false
     };
-    setShoppingList(prev => [...prev, newItem]);
+    this._shoppingList = [...this._shoppingList, newItem];
+    saveToStorage(STORAGE_KEYS.SHOPPING_LIST, this._shoppingList);
+    this.notify();
     return newItem;
-  }, []);
-
-  return { shoppingList, toggleItem, addItem, setShoppingList };
-}
-
-export const useMemberInfo = () => {
-  return useState<MemberInfo>(mockMemberInfo);
-};
-
-export function useAnalysis(consumptions: Consumption[]) {
-  const getCategoryStats = useCallback(() => {
+  }
+  
+  getCategoryStats() {
     const stats: Record<string, number> = { food: 0, medicine: 0, snack: 0, other: 0 };
-    const total = consumptions.reduce((sum, item) => {
+    const total = this._consumptions.reduce((sum, item) => {
       stats[item.type] += item.amount;
       return sum + item.amount;
     }, 0);
@@ -139,22 +156,22 @@ export function useAnalysis(consumptions: Consumption[]) {
       { type: 'snack' as const, label: '零食', value: stats.snack, percentage: total > 0 ? Math.round((stats.snack / total) * 100) : 0 },
       { type: 'other' as const, label: '其他', value: stats.other, percentage: total > 0 ? Math.round((stats.other / total) * 100) : 0 }
     ];
-  }, [consumptions]);
-
-  const getAnalysisData = useCallback((): AnalysisResult => {
-    const foodConsumptions = consumptions.filter(c => c.type === 'food');
+  }
+  
+  getAnalysisData(): AnalysisResult {
+    const foodConsumptions = this._consumptions.filter(c => c.type === 'food');
     const totalWeight = foodConsumptions.reduce((sum, c) => sum + (c.weight || 0), 0);
     const totalFoodCost = foodConsumptions.reduce((sum, c) => sum + c.amount, 0);
     const foodCostPerKg = totalWeight > 0 ? (totalFoodCost / totalWeight).toFixed(1) : '0';
     
-    const totalConsumption = consumptions.reduce((sum, c) => sum + c.amount, 0);
-    const medicineCost = consumptions.filter(c => c.type === 'medicine').reduce((sum, c) => sum + c.amount, 0);
+    const totalConsumption = this._consumptions.reduce((sum, c) => sum + c.amount, 0);
+    const medicineCost = this._consumptions.filter(c => c.type === 'medicine').reduce((sum, c) => sum + c.amount, 0);
     const medicinePercentage = totalConsumption > 0 ? ((medicineCost / totalConsumption) * 100).toFixed(1) : '0';
     
     const monthlyTrend: MonthlyData[] = [];
     const monthMap = new Map<string, number>();
     
-    consumptions.forEach(c => {
+    this._consumptions.forEach(c => {
       const month = c.date.slice(0, 7);
       monthMap.set(month, (monthMap.get(month) || 0) + c.amount);
     });
@@ -173,9 +190,9 @@ export function useAnalysis(consumptions: Consumption[]) {
       priceIncreaseAlert: [],
       monthlyTrend
     };
-  }, [consumptions]);
-
-  const generateQuarterlyReport = useCallback(() => {
+  }
+  
+  generateQuarterlyReport() {
     const now = new Date();
     const quarter = Math.ceil((now.getMonth() + 1) / 3);
     const year = now.getFullYear();
@@ -183,7 +200,7 @@ export function useAnalysis(consumptions: Consumption[]) {
     const quarterStart = new Date(year, (quarter - 1) * 3, 1);
     const quarterEnd = new Date(year, quarter * 3, 0);
     
-    const quarterConsumptions = consumptions.filter(c => {
+    const quarterConsumptions = this._consumptions.filter(c => {
       const date = new Date(c.date);
       return date >= quarterStart && date <= quarterEnd;
     });
@@ -205,21 +222,21 @@ export function useAnalysis(consumptions: Consumption[]) {
       recordCount: quarterConsumptions.length,
       categoryList,
       monthlyBreakdown: [
-        { month: `${year}-${String((quarter - 1) * 3 + 1).padStart(2, '0')}`, amount: quarterConsumptions.filter(c => c.date.startsWith(`${year}-${String((quarter - 1) * 3 + 1).padStart(2, '0')}`).reduce((sum, c) => sum + c.amount, 0) },
-        { month: `${year}-${String((quarter - 1) * 3 + 2).padStart(2, '0')}`, amount: quarterConsumptions.filter(c => c.date.startsWith(`${year}-${String((quarter - 1) * 3 + 2).padStart(2, '0')}`).reduce((sum, c) => sum + c.amount, 0) },
-        { month: `${year}-${String((quarter - 1) * 3 + 3).padStart(2, '0')}`, amount: quarterConsumptions.filter(c => c.date.startsWith(`${year}-${String((quarter - 1) * 3 + 3).padStart(2, '0')}`).reduce((sum, c) => sum + c.amount, 0) }
+        { month: `${year}-${String((quarter - 1) * 3 + 1).padStart(2, '0')}`, amount: quarterConsumptions.filter(c => c.date.startsWith(`${year}-${String((quarter - 1) * 3 + 1).padStart(2, '0')}`)).reduce((sum, c) => sum + c.amount, 0) },
+        { month: `${year}-${String((quarter - 1) * 3 + 2).padStart(2, '0')}`, amount: quarterConsumptions.filter(c => c.date.startsWith(`${year}-${String((quarter - 1) * 3 + 2).padStart(2, '0')}`)).reduce((sum, c) => sum + c.amount, 0) },
+        { month: `${year}-${String((quarter - 1) * 3 + 3).padStart(2, '0')}`, amount: quarterConsumptions.filter(c => c.date.startsWith(`${year}-${String((quarter - 1) * 3 + 3).padStart(2, '0')}`)).reduce((sum, c) => sum + c.amount, 0) }
       ]
     };
-  }, [consumptions]);
-
-  const generateCostCard = useCallback(() => {
-    const totalSpent = consumptions.reduce((sum, c) => sum + c.amount, 0);
-    const foodSpent = consumptions.filter(c => c.type === 'food').reduce((sum, c) => sum + c.amount, 0);
-    const medicineSpent = consumptions.filter(c => c.type === 'medicine').reduce((sum, c) => sum + c.amount, 0);
-    const snackSpent = consumptions.filter(c => c.type === 'snack').reduce((sum, c) => sum + c.amount, 0);
-    const otherSpent = consumptions.filter(c => c.type === 'other').reduce((sum, c) => sum + c.amount, 0);
+  }
+  
+  generateCostCard() {
+    const totalSpent = this._consumptions.reduce((sum, c) => sum + c.amount, 0);
+    const foodSpent = this._consumptions.filter(c => c.type === 'food').reduce((sum, c) => sum + c.amount, 0);
+    const medicineSpent = this._consumptions.filter(c => c.type === 'medicine').reduce((sum, c) => sum + c.amount, 0);
+    const snackSpent = this._consumptions.filter(c => c.type === 'snack').reduce((sum, c) => sum + c.amount, 0);
+    const otherSpent = this._consumptions.filter(c => c.type === 'other').reduce((sum, c) => sum + c.amount, 0);
     
-    const monthCount = new Set(consumptions.map(c => c.date.slice(0, 7))).size;
+    const monthCount = new Set(this._consumptions.map(c => c.date.slice(0, 7))).size;
     
     const categoryRanking = [
       { name: '猫粮', amount: foodSpent, icon: '🥣', percentage: totalSpent > 0 ? Math.round((foodSpent / totalSpent) * 100) : 0 },
@@ -234,11 +251,24 @@ export function useAnalysis(consumptions: Consumption[]) {
       medicineSpent,
       snackSpent,
       otherSpent,
-      recordCount: consumptions.length,
+      recordCount: this._consumptions.length,
       averageMonthly: monthCount > 0 ? Math.round(totalSpent / monthCount) : 0,
       categoryRanking
     };
-  }, [consumptions]);
+  }
+}
 
-  return { getCategoryStats, getAnalysisData, generateQuarterlyReport, generateCostCard };
-};
+export const store = DataStore.getInstance();
+
+export function useStore() {
+  const [, setUpdateKey] = require('react').useState(0);
+  
+  require('react').useEffect(() => {
+    const unsubscribe = store.subscribe(() => {
+      setUpdateKey(prev => prev + 1);
+    });
+    return unsubscribe;
+  }, []);
+  
+  return store;
+}

@@ -2,14 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, Input } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
-import { useBudget, useShoppingList, useMemberInfo, useConsumptions } from '@/store';
+import { useStore } from '@/store';
 import type { ShoppingItem } from '@/types';
 
 export default function MinePage() {
-  const { budget, updateBudget } = useBudget();
-  const { shoppingList, toggleItem, addItem } = useShoppingList();
-  const [memberInfo] = useMemberInfo();
-  const { consumptions } = useConsumptions();
+  const store = useStore();
   
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [showShoppingModal, setShowShoppingModal] = useState(false);
@@ -24,7 +21,7 @@ export default function MinePage() {
   ];
 
   const openBudgetModal = () => {
-    setNewBudget(budget.monthlyLimit.toString());
+    setNewBudget(store.budget.monthlyLimit.toString());
     setShowBudgetModal(true);
   };
 
@@ -34,7 +31,7 @@ export default function MinePage() {
       Taro.showToast({ title: '请输入有效的预算金额', icon: 'none' });
       return;
     }
-    updateBudget(amount);
+    store.updateBudget(amount);
     Taro.showToast({ title: '预算设置成功', icon: 'success' });
     setShowBudgetModal(false);
   };
@@ -44,7 +41,7 @@ export default function MinePage() {
       Taro.showToast({ title: '请输入物品名称', icon: 'none' });
       return;
     }
-    addItem({
+    store.addShoppingItem({
       name: newItem.name.trim(),
       type: 'food',
       quantity: parseInt(newItem.quantity) || 1,
@@ -63,7 +60,7 @@ export default function MinePage() {
     }
   };
 
-  const totalSpent = consumptions.reduce((sum, c) => sum + c.amount, 0);
+  const totalSpent = store.consumptions.reduce((sum, c) => sum + c.amount, 0);
 
   return (
     <View className={styles.page}>
@@ -73,13 +70,13 @@ export default function MinePage() {
             <Text className={styles.avatarIcon}>🐱</Text>
           </View>
           <View className={styles.userDetail}>
-            <Text className={styles.userName}>{memberInfo.name}</Text>
-            <Text className={styles.userLevel}>{memberInfo.memberLevel}</Text>
+            <Text className={styles.userName}>{store.memberInfo.name}</Text>
+            <Text className={styles.userLevel}>{store.memberInfo.memberLevel}</Text>
           </View>
         </View>
         <View className={styles.stats}>
           <View className={styles.statItem}>
-            <Text className={styles.statValue}>¥{memberInfo.balance}</Text>
+            <Text className={styles.statValue}>¥{store.memberInfo.balance}</Text>
             <Text className={styles.statLabel}>余额</Text>
           </View>
           <View className={styles.statItem}>
@@ -87,7 +84,7 @@ export default function MinePage() {
             <Text className={styles.statLabel}>累计消费</Text>
           </View>
           <View className={styles.statItem}>
-            <Text className={styles.statValue}>{consumptions.length}</Text>
+            <Text className={styles.statValue}>{store.consumptions.length}</Text>
             <Text className={styles.statLabel}>记录数</Text>
           </View>
         </View>
@@ -110,19 +107,19 @@ export default function MinePage() {
             <Text className={styles.budgetTitle}>本月消费上限</Text>
             <Text className={styles.budgetEdit} onClick={openBudgetModal}>修改</Text>
           </View>
-          <Text className={styles.budgetAmount}>¥{budget.monthlyLimit}</Text>
-          <Text className={styles.budgetDesc}>本月已消费 ¥{budget.currentMonthSpent}</Text>
+          <Text className={styles.budgetAmount}>¥{store.budget.monthlyLimit}</Text>
+          <Text className={styles.budgetDesc}>本月已消费 ¥{store.budget.currentMonthSpent}</Text>
         </View>
       </View>
 
       <View className={styles.section}>
         <Text className={styles.sectionTitle}>待买清单</Text>
         <View className={styles.shoppingList}>
-          {shoppingList.map((item: ShoppingItem) => (
+          {store.shoppingList.map((item: ShoppingItem) => (
             <View key={item.id} className={styles.shoppingItem}>
               <View 
                 className={`${styles.checkbox} ${item.isChecked ? styles.checked : ''}`} 
-                onClick={() => toggleItem(item.id)}
+                onClick={() => store.toggleShoppingItem(item.id)}
               >
                 {item.isChecked && <Text className={styles.checkIcon}>✓</Text>}
               </View>
@@ -154,7 +151,7 @@ export default function MinePage() {
                 placeholder="输入预算金额" 
                 type="number"
                 value={newBudget}
-                onInput={(e) => setNewBudget(e.detail.value)} 
+                onInput={e => setNewBudget(e.detail.value)} 
               />
             </View>
             <View className={styles.modalActions}>
@@ -179,7 +176,7 @@ export default function MinePage() {
                 className={styles.formInput} 
                 placeholder="输入物品名称" 
                 value={newItem.name}
-                onInput={(e) => setNewItem({ ...newItem, name: e.detail.value })} 
+                onInput={e => setNewItem({ ...newItem, name: e.detail.value })} 
               />
             </View>
             <View className={styles.formItem}>
@@ -189,7 +186,7 @@ export default function MinePage() {
                 placeholder="输入数量" 
                 type="number"
                 value={newItem.quantity}
-                onInput={(e) => setNewItem({ ...newItem, quantity: e.detail.value })} 
+                onInput={e => setNewItem({ ...newItem, quantity: e.detail.value })} 
               />
             </View>
             <View className={styles.formItem}>

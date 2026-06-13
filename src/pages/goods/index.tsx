@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Input } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
-import { useProducts } from '@/store';
+import { useStore } from '@/store';
 import type { Product, CategoryType } from '@/types';
 
 export default function GoodsPage() {
@@ -15,7 +15,7 @@ export default function GoodsPage() {
     spec: '',
     brand: ''
   });
-  const { products, addProduct } = useProducts();
+  const store = useStore();
 
   const tabs = [
     { key: 'all', label: '全部' },
@@ -25,8 +25,8 @@ export default function GoodsPage() {
   ];
 
   const filteredProducts = activeTab === 'all' 
-    ? products 
-    : products.filter(p => p.type === activeTab);
+    ? store.products 
+    : store.products.filter(p => p.type === activeTab);
 
   const handleSubmit = () => {
     if (!newProduct.name.trim()) {
@@ -46,7 +46,7 @@ export default function GoodsPage() {
       return;
     }
 
-    addProduct({
+    store.addProduct({
       name: newProduct.name.trim(),
       type: newProduct.type,
       unitPrice: parseFloat(newProduct.unitPrice),
@@ -116,7 +116,7 @@ export default function GoodsPage() {
                 className={styles.formInput} 
                 placeholder="输入商品名称" 
                 value={newProduct.name}
-                onInput={(e) => setNewProduct({ ...newProduct, name: e.detail.value })} 
+                onInput={e => setNewProduct({ ...newProduct, name: e.detail.value })} 
               />
             </View>
 
@@ -141,7 +141,7 @@ export default function GoodsPage() {
                 className={styles.formInput} 
                 placeholder="输入品牌" 
                 value={newProduct.brand}
-                onInput={(e) => setNewProduct({ ...newProduct, brand: e.detail.value })} 
+                onInput={e => setNewProduct({ ...newProduct, brand: e.detail.value })} 
               />
             </View>
 
@@ -151,7 +151,7 @@ export default function GoodsPage() {
                 className={styles.formInput} 
                 placeholder="如：2kg" 
                 value={newProduct.spec}
-                onInput={(e) => setNewProduct({ ...newProduct, spec: e.detail.value })} 
+                onInput={e => setNewProduct({ ...newProduct, spec: e.detail.value })} 
               />
             </View>
 
@@ -162,7 +162,7 @@ export default function GoodsPage() {
                 placeholder="输入单价" 
                 type="number"
                 value={newProduct.unitPrice}
-                onInput={(e) => setNewProduct({ ...newProduct, unitPrice: e.detail.value })} 
+                onInput={e => setNewProduct({ ...newProduct, unitPrice: e.detail.value })} 
               />
             </View>
 
