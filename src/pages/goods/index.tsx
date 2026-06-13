@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text } from '@tarojs/components';
+import { View, Text, Input } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useProducts } from '@/store';
@@ -29,29 +29,29 @@ export default function GoodsPage() {
     : products.filter(p => p.type === activeTab);
 
   const handleSubmit = () => {
-    if (!newProduct.name) {
+    if (!newProduct.name.trim()) {
       Taro.showToast({ title: '请填写商品名称', icon: 'none' });
       return;
     }
-    if (!newProduct.unitPrice || parseFloat(newProduct.unitPrice) <= 0) {
+    if (!newProduct.unitPrice.trim() || parseFloat(newProduct.unitPrice) <= 0) {
       Taro.showToast({ title: '请填写有效单价', icon: 'none' });
       return;
     }
-    if (!newProduct.spec) {
+    if (!newProduct.spec.trim()) {
       Taro.showToast({ title: '请填写规格', icon: 'none' });
       return;
     }
-    if (!newProduct.brand) {
+    if (!newProduct.brand.trim()) {
       Taro.showToast({ title: '请填写品牌', icon: 'none' });
       return;
     }
 
     addProduct({
-      name: newProduct.name,
+      name: newProduct.name.trim(),
       type: newProduct.type,
       unitPrice: parseFloat(newProduct.unitPrice),
-      spec: newProduct.spec,
-      brand: newProduct.brand
+      spec: newProduct.spec.trim(),
+      brand: newProduct.brand.trim()
     });
 
     Taro.showToast({ title: '添加成功', icon: 'success' });
@@ -112,10 +112,11 @@ export default function GoodsPage() {
             
             <View className={styles.formItem}>
               <Text className={styles.formLabel}>商品名称 *</Text>
-              <Text 
+              <Input 
                 className={styles.formInput} 
                 placeholder="输入商品名称" 
-                onInput={(e: any) => setNewProduct({ ...newProduct, name: e.detail.value })} 
+                value={newProduct.name}
+                onInput={(e) => setNewProduct({ ...newProduct, name: e.detail.value })} 
               />
             </View>
 
@@ -136,28 +137,32 @@ export default function GoodsPage() {
 
             <View className={styles.formItem}>
               <Text className={styles.formLabel}>品牌 *</Text>
-              <Text 
+              <Input 
                 className={styles.formInput} 
                 placeholder="输入品牌" 
-                onInput={(e: any) => setNewProduct({ ...newProduct, brand: e.detail.value })} 
+                value={newProduct.brand}
+                onInput={(e) => setNewProduct({ ...newProduct, brand: e.detail.value })} 
               />
             </View>
 
             <View className={styles.formItem}>
               <Text className={styles.formLabel}>规格 *</Text>
-              <Text 
+              <Input 
                 className={styles.formInput} 
                 placeholder="如：2kg" 
-                onInput={(e: any) => setNewProduct({ ...newProduct, spec: e.detail.value })} 
+                value={newProduct.spec}
+                onInput={(e) => setNewProduct({ ...newProduct, spec: e.detail.value })} 
               />
             </View>
 
             <View className={styles.formItem}>
               <Text className={styles.formLabel}>单价 *</Text>
-              <Text 
+              <Input 
                 className={styles.formInput} 
                 placeholder="输入单价" 
-                onInput={(e: any) => setNewProduct({ ...newProduct, unitPrice: e.detail.value })} 
+                type="number"
+                value={newProduct.unitPrice}
+                onInput={(e) => setNewProduct({ ...newProduct, unitPrice: e.detail.value })} 
               />
             </View>
 

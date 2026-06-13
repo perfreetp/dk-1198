@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text } from '@tarojs/components';
+import { View, Text, Input } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import type { CategoryType } from '@/types';
@@ -31,7 +31,7 @@ export default function RecordPage() {
     } else if (key === 'confirm') {
       submitRecord();
     } else {
-      if (amount.includes('.') && amount.split('.')[1].length >= 2) {
+      if (amount.includes('.') && amount.split('.')[1]?.length >= 2) {
         return;
       }
       setAmount(prev => prev + key);
@@ -39,19 +39,20 @@ export default function RecordPage() {
   };
 
   const submitRecord = () => {
-    if (!amount || parseFloat(amount) <= 0) {
+    const amountValue = parseFloat(amount);
+    if (!amount || amountValue <= 0) {
       Taro.showToast({ title: '请输入金额', icon: 'none' });
       return;
     }
     
     addConsumption({
       type: category,
-      amount: parseFloat(amount),
-      description: description || categoryLabels[category],
+      amount: amountValue,
+      description: description.trim() || categoryLabels[category],
       isEssential
     });
     
-    addSpent(parseFloat(amount));
+    addSpent(amountValue);
     
     Taro.showToast({ title: '记账成功', icon: 'success' });
     setAmount('');
@@ -69,7 +70,7 @@ export default function RecordPage() {
       count: 1,
       sizeType: ['compressed'],
       sourceType: ['album', 'camera'],
-      success: (res) => {
+      success: () => {
         Taro.showLoading({ title: '识别中...' });
         
         setTimeout(() => {
@@ -82,7 +83,7 @@ export default function RecordPage() {
             setAmount(randomAmount);
             Taro.showToast({ title: `识别成功：¥${randomAmount}`, icon: 'success' });
           } else {
-            Taro.showToast({ title: '识别失败，请手动输入金额', icon: 'none' });
+            Taro.showToast({ title: '识别失败，请手动输入金额', icon: 'none', duration: 2000 });
           }
         }, 1500);
       },
@@ -164,7 +165,12 @@ export default function RecordPage() {
 
         <View className={styles.formItem}>
           <Text className={styles.formLabel}>备注</Text>
-          <Text className={styles.input} placeholder="输入消费备注" onInput={(e: any) => setDescription(e.detail.value)} />
+          <Input 
+            className={styles.input} 
+            placeholder="输入消费备注" 
+            value={description}
+            onInput={e => setDescription(e.detail.value)} 
+          />
         </View>
 
         <View className={styles.formItem}>

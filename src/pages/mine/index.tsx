@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text } from '@tarojs/components';
+import { View, Text, Input } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useBudget, useShoppingList, useMemberInfo, useConsumptions } from '@/store';
@@ -13,7 +13,7 @@ export default function MinePage() {
   
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [showShoppingModal, setShowShoppingModal] = useState(false);
-  const [newBudget, setNewBudget] = useState(budget.monthlyLimit.toString());
+  const [newBudget, setNewBudget] = useState('');
   const [newItem, setNewItem] = useState({ name: '', quantity: '1', priority: 'medium' });
 
   const menuItems = [
@@ -23,25 +23,31 @@ export default function MinePage() {
     { icon: '⚙️', text: '设置', action: () => Taro.showToast({ title: '设置页面', icon: 'none' }) }
   ];
 
+  const openBudgetModal = () => {
+    setNewBudget(budget.monthlyLimit.toString());
+    setShowBudgetModal(true);
+  };
+
   const saveBudget = () => {
-    if (!newBudget || parseInt(newBudget) <= 0) {
+    const amount = parseFloat(newBudget);
+    if (!newBudget.trim() || amount <= 0) {
       Taro.showToast({ title: '请输入有效的预算金额', icon: 'none' });
       return;
     }
-    updateBudget(parseInt(newBudget));
+    updateBudget(amount);
     Taro.showToast({ title: '预算设置成功', icon: 'success' });
     setShowBudgetModal(false);
   };
 
   const addShoppingItem = () => {
-    if (!newItem.name) {
+    if (!newItem.name.trim()) {
       Taro.showToast({ title: '请输入物品名称', icon: 'none' });
       return;
     }
     addItem({
-      name: newItem.name,
+      name: newItem.name.trim(),
       type: 'food',
-      quantity: parseInt(newItem.quantity),
+      quantity: parseInt(newItem.quantity) || 1,
       priority: newItem.priority as 'high' | 'medium' | 'low'
     });
     setShowShoppingModal(false);
@@ -102,7 +108,7 @@ export default function MinePage() {
         <View className={styles.budgetCard}>
           <View className={styles.budgetHeader}>
             <Text className={styles.budgetTitle}>本月消费上限</Text>
-            <Text className={styles.budgetEdit} onClick={() => setShowBudgetModal(true)}>修改</Text>
+            <Text className={styles.budgetEdit} onClick={openBudgetModal}>修改</Text>
           </View>
           <Text className={styles.budgetAmount}>¥{budget.monthlyLimit}</Text>
           <Text className={styles.budgetDesc}>本月已消费 ¥{budget.currentMonthSpent}</Text>
@@ -143,7 +149,13 @@ export default function MinePage() {
             <Text className={styles.modalTitle}>设置月度预算</Text>
             <View className={styles.formItem}>
               <Text className={styles.formLabel}>预算金额</Text>
-              <Text className={styles.formInput} placeholder="输入预算金额" onInput={(e: any) => setNewBudget(e.detail.value)} />
+              <Input 
+                className={styles.formInput} 
+                placeholder="输入预算金额" 
+                type="number"
+                value={newBudget}
+                onInput={(e) => setNewBudget(e.detail.value)} 
+              />
             </View>
             <View className={styles.modalActions}>
               <View className={`${styles.modalBtn} ${styles.secondary}`} onClick={() => setShowBudgetModal(false)}>
@@ -163,11 +175,22 @@ export default function MinePage() {
             <Text className={styles.modalTitle}>添加待买物品</Text>
             <View className={styles.formItem}>
               <Text className={styles.formLabel}>物品名称</Text>
-              <Text className={styles.formInput} placeholder="输入物品名称" onInput={(e: any) => setNewItem({ ...newItem, name: e.detail.value })} />
+              <Input 
+                className={styles.formInput} 
+                placeholder="输入物品名称" 
+                value={newItem.name}
+                onInput={(e) => setNewItem({ ...newItem, name: e.detail.value })} 
+              />
             </View>
             <View className={styles.formItem}>
               <Text className={styles.formLabel}>数量</Text>
-              <Text className={styles.formInput} placeholder="输入数量" onInput={(e: any) => setNewItem({ ...newItem, quantity: e.detail.value })} />
+              <Input 
+                className={styles.formInput} 
+                placeholder="输入数量" 
+                type="number"
+                value={newItem.quantity}
+                onInput={(e) => setNewItem({ ...newItem, quantity: e.detail.value })} 
+              />
             </View>
             <View className={styles.formItem}>
               <Text className={styles.formLabel}>优先级</Text>

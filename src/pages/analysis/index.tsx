@@ -18,19 +18,27 @@ export default function AnalysisPage() {
   const maxAmount = Math.max(...analysis.monthlyTrend.map(item => item.amount), 1);
 
   const generateReport = () => {
-    const report = generateQuarterlyReport();
-    setReportData(report);
-    setShowReportModal(true);
+    try {
+      const report = generateQuarterlyReport();
+      setReportData(report);
+      setShowReportModal(true);
+    } catch (e) {
+      Taro.showToast({ title: '生成账单失败', icon: 'none' });
+    }
   };
 
   const generateCostCard = () => {
-    const card = generateCostCard();
-    setCostCardData(card);
-    setShowCostCardModal(true);
+    try {
+      const card = generateCostCard();
+      setCostCardData(card);
+      setShowCostCardModal(true);
+    } catch (e) {
+      Taro.showToast({ title: '生成卡片失败', icon: 'none' });
+    }
   };
 
   const handleShare = (type: string) => {
-    Taro.showToast({ title: `已生成${type}分享卡片`, icon: 'success' });
+    Taro.showToast({ title: `${type}已生成，可分享给好友`, icon: 'success', duration: 2000 });
   };
 
   const categoryLabels: Record<string, string> = {
@@ -38,6 +46,13 @@ export default function AnalysisPage() {
     medicine: '药品',
     snack: '零食',
     other: '其他'
+  };
+
+  const getRankingBg = (rank: number) => {
+    if (rank === 1) return '#FFD700';
+    if (rank === 2) return '#C0C0C0';
+    if (rank === 3) return '#CD7F32';
+    return '#909399';
   };
 
   return (
@@ -70,8 +85,8 @@ export default function AnalysisPage() {
             <View className={styles.statIcon}>
               <Text className={styles.statIconText}>📈</Text>
             </View>
-            <Text className={styles.statValue}>2</Text>
-            <Text className={styles.statLabel}>涨价提醒</Text>
+            <Text className={styles.statValue}>{products.length}</Text>
+            <Text className={styles.statLabel}>商品数量</Text>
           </View>
         </View>
       </View>
@@ -81,7 +96,7 @@ export default function AnalysisPage() {
           <Text className={styles.sectionTitle}>消费趋势</Text>
           <View className={styles.chartContainer}>
             <View className={styles.chartBar}>
-              {analysis.monthlyTrend.map((item, index) => (
+              {analysis.monthlyTrend.length > 0 ? analysis.monthlyTrend.map((item, index) => (
                 <View key={index} className={styles.barItem}>
                   <Text className={styles.barValue}>¥{item.amount}</Text>
                   <View 
@@ -90,7 +105,9 @@ export default function AnalysisPage() {
                   />
                   <Text className={styles.barLabel}>{item.month.slice(5)}</Text>
                 </View>
-              ))}
+              )) : (
+                <Text className={styles.emptyText}>暂无消费数据</Text>
+              )}
             </View>
           </View>
         </View>
@@ -111,33 +128,7 @@ export default function AnalysisPage() {
                     <Text className={styles.alertDesc}>{item.spec}</Text>
                   </View>
                 </View>
-                <Text className={styles.alertRight}>价格上涨</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      </View>
-
-      <View className={`${styles.section}`}>
-        <View className={styles.card}>
-          <Text className={styles.sectionTitle}>消费排名</Text>
-          <View className={styles.alertList}>
-            {[
-              { name: '猫粮', amount: 615, rank: 1 },
-              { name: '医疗', amount: 245, rank: 2 },
-              { name: '美容', amount: 200, rank: 3 },
-              { name: '零食', amount: 103, rank: 4 }
-            ].map((item, index) => (
-              <View key={index} className={styles.alertItem}>
-                <View className={styles.alertLeft}>
-                  <View className={styles.alertIcon} style={{ background: item.rank === 1 ? '#FFD700' : item.rank === 2 ? '#C0C0C0' : item.rank === 3 ? '#CD7F32' : '#909399' }}>
-                    <Text className={styles.alertIconText}>{item.rank}</Text>
-                  </View>
-                  <View className={styles.alertInfo}>
-                    <Text className={styles.alertTitle}>{item.name}</Text>
-                  </View>
-                </View>
-                <Text className={styles.alertRight}>¥{item.amount}</Text>
+                <Text className={styles.alertRight}>¥{item.unitPrice}</Text>
               </View>
             ))}
           </View>
@@ -171,7 +162,7 @@ export default function AnalysisPage() {
             <View className={styles.categoryList}>
               {reportData.categoryList.map((item: any, index: number) => (
                 <View key={index} className={styles.categoryItem}>
-                  <Text className={styles.categoryName}>{categoryLabels[item.type]}</Text>
+                  <Text className={styles.categoryName}>{categoryLabels[item.type] || item.type}</Text>
                   <View className={styles.categoryBarWrap}>
                     <View className={styles.categoryBarBg}>
                       <View className={styles.categoryBar} style={{ width: `${item.percentage}%` }} />
@@ -217,22 +208,38 @@ export default function AnalysisPage() {
               <Text className={styles.costTotalAmount}>¥{costCardData.totalSpent}</Text>
             </View>
 
-            <View className={styles.costCardStats}>
-              <View className={styles.costStatItem}>
-                <Text className={styles.costStatIcon}>🥣</Text>
-                <Text className={styles.costStatLabel}>猫粮</Text>
-                <Text className={styles.costStatValue}>¥{costCardData.foodSpent}</Text>
-              </View>
-              <View className={styles.costStatItem}>
-                <Text className={styles.costStatIcon}>💊</Text>
-                <Text className={styles.costStatLabel}>医疗</Text>
-                <Text className={styles.costStatValue}>¥{costCardData.medicineSpent}</Text>
-              </View>
-              <View className={styles.costStatItem}>
-                <Text className={styles.costStatIcon}>🍪</Text>
-                <Text className={styles.costStatLabel}>零食</Text>
-                <Text className={styles.costStatValue}>¥{costCardData.snackSpent}</Text>
-              </View>
+            <Text className={styles.modalSectionTitle}>分类占比</Text>
+            <View className={styles.costCategoryList}>
+              {costCardData.categoryRanking.map((item: any, index: number) => (
+                <View key={index} className={styles.costCategoryItem}>
+                  <View className={styles.costCategoryLeft}>
+                    <Text className={styles.costCategoryIcon}>{item.icon}</Text>
+                    <Text className={styles.costCategoryName}>{item.name}</Text>
+                  </View>
+                  <View className={styles.costCategoryRight}>
+                    <View className={styles.costCategoryBarBg}>
+                      <View className={styles.costCategoryBar} style={{ width: `${item.percentage}%` }} />
+                    </View>
+                    <Text className={styles.costCategoryValue}>¥{item.amount} ({item.percentage}%)</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            <Text className={styles.modalSectionTitle}>消费排名</Text>
+            <View className={styles.costRankingList}>
+              {costCardData.categoryRanking.map((item: any, index: number) => (
+                <View key={index} className={styles.costRankingItem}>
+                  <View className={styles.costRankingLeft}>
+                    <View className={styles.costRankingBadge} style={{ background: getRankingBg(index + 1) }}>
+                      <Text className={styles.costRankingNum}>{index + 1}</Text>
+                    </View>
+                    <Text className={styles.costCategoryIcon}>{item.icon}</Text>
+                    <Text className={styles.costRankingName}>{item.name}</Text>
+                  </View>
+                  <Text className={styles.costRankingAmount}>¥{item.amount}</Text>
+                </View>
+              ))}
             </View>
 
             <View className={styles.costCardAvg}>

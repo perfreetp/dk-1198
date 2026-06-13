@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import Taro from '@tarojs/taro';
 import type { Consumption, Product, Budget, ShoppingItem, MemberInfo, AnalysisResult, MonthlyData } from '@/types';
-import { mockConsumptions, mockProducts, mockBudget, mockShoppingList, mockMemberInfo, mockAnalysis } from '@/data/mockData';
+import { mockConsumptions, mockProducts, mockBudget, mockShoppingList, mockMemberInfo } from '@/data/mockData';
 
 const STORAGE_KEYS = {
   CONSUMPTIONS: 'pet_consumptions',
@@ -11,7 +12,7 @@ const STORAGE_KEYS = {
 
 function loadFromStorage<T>(key: string, defaultValue: T): T {
   try {
-    const data = localStorage.getItem(key);
+    const data = Taro.getStorageSync(key);
     return data ? JSON.parse(data) : defaultValue;
   } catch {
     return defaultValue;
@@ -20,7 +21,7 @@ function loadFromStorage<T>(key: string, defaultValue: T): T {
 
 function saveToStorage(key: string, value: unknown) {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    Taro.setStorageSync(key, JSON.stringify(value));
   } catch (e) {
     console.error('Storage save error:', e);
   }
@@ -61,8 +62,8 @@ export function useProducts() {
     const newProduct: Product = {
       ...product,
       id: Date.now().toString(),
-      unitPrice: parseFloat(product.unitPrice.toString()),
-      shops: [{ shopName: '默认店铺', price: parseFloat(product.unitPrice.toString()) }],
+      unitPrice: parseFloat(product.unitPrice.toString()) || 0,
+      shops: [{ shopName: '默认店铺', price: parseFloat(product.unitPrice.toString()) || 0 }],
       lastPurchaseDate: new Date().toISOString().split('T')[0]
     };
     setProducts(prev => [...prev, newProduct]);
@@ -176,7 +177,7 @@ export function useAnalysis(consumptions: Consumption[]) {
 
   const generateQuarterlyReport = useCallback(() => {
     const now = new Date();
-    const quarter = Math.ceil(now.getMonth() / 3);
+    const quarter = Math.ceil((now.getMonth() + 1) / 3);
     const year = now.getFullYear();
     
     const quarterStart = new Date(year, (quarter - 1) * 3, 1);
@@ -216,16 +217,26 @@ export function useAnalysis(consumptions: Consumption[]) {
     const foodSpent = consumptions.filter(c => c.type === 'food').reduce((sum, c) => sum + c.amount, 0);
     const medicineSpent = consumptions.filter(c => c.type === 'medicine').reduce((sum, c) => sum + c.amount, 0);
     const snackSpent = consumptions.filter(c => c.type === 'snack').reduce((sum, c) => sum + c.amount, 0);
+    const otherSpent = consumptions.filter(c => c.type === 'other').reduce((sum, c) => sum + c.amount, 0);
     
     const monthCount = new Set(consumptions.map(c => c.date.slice(0, 7))).size;
+    
+    const categoryRanking = [
+      { name: '猫粮', amount: foodSpent, icon: '🥣', percentage: totalSpent > 0 ? Math.round((foodSpent / totalSpent) * 100) : 0 },
+      { name: '医疗', amount: medicineSpent, icon: '💊', percentage: totalSpent > 0 ? Math.round((medicineSpent / totalSpent) * 100) : 0 },
+      { name: '零食', amount: snackSpent, icon: '🍪', percentage: totalSpent > 0 ? Math.round((snackSpent / totalSpent) * 100) : 0 },
+      { name: '其他', amount: otherSpent, icon: '🔧', percentage: totalSpent > 0 ? Math.round((otherSpent / totalSpent) * 100) : 0 }
+    ].sort((a, b) => b.amount - a.amount);
     
     return {
       totalSpent,
       foodSpent,
       medicineSpent,
       snackSpent,
+      otherSpent,
       recordCount: consumptions.length,
-      averageMonthly: monthCount > 0 ? Math.round(totalSpent / monthCount) : 0
+      averageMonthly: monthCount > 0 ? Math.round(totalSpent / monthCount) : 0,
+      categoryRanking
     };
   }, [consumptions]);
 
