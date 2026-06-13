@@ -1,0 +1,11 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  box-shadow: $shadow-card;
+}
+
+.cardPadding {
+  padding: $spacing-lg;
+}

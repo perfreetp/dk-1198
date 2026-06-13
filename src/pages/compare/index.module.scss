@@ -1,0 +1,149 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding: $page-padding;
+}
+
+.filterBar {
+  display: flex;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+}
+
+.filterItem {
+  padding: $spacing-sm $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  
+  &.active {
+    background: $color-primary;
+    color: $color-text-white;
+  }
+}
+
+.compareCard {
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.productName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.productSpec {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.shopsTable {
+  width: 100%;
+}
+
+.shopRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md 0;
+  
+  &:not(:last-child) {
+    border-bottom: 1rpx solid $color-divider;
+  }
+}
+
+.shopName {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.shopPrice {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $color-text-primary;
+}
+
+.bestPrice {
+  color: $color-success;
+  font-weight: $font-weight-semibold;
+}
+
+.bestTag {
+  font-size: $font-size-xs;
+  background: rgba($color-success, 0.1);
+  color: $color-success;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-round;
+  margin-left: $spacing-sm;
+}
+
+.priceChart {
+  display: flex;
+  align-items: flex-end;
+  height: 120rpx;
+  margin-top: $spacing-md;
+  padding: 0 $spacing-sm;
+}
+
+.priceBarItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.priceBar {
+  width: 48rpx;
+  border-radius: $radius-sm $radius-sm 0 0;
+  background: $color-bg-hover;
+  min-height: 8rpx;
+  transition: height $transition-base;
+  
+  &.best {
+    background: linear-gradient(180deg, $color-success 0%, #52c41a 100%);
+  }
+}
+
+.priceLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: $spacing-xs;
+  text-align: center;
+}
+
+.priceValue {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-xs;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $spacing-xl * 2;
+}
+
+.emptyIcon {
+  font-size: 96rpx;
+  margin-bottom: $spacing-lg;
+}
+
+.emptyText {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+}

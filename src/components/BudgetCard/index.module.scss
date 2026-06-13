@@ -1,0 +1,85 @@
+@use '@/styles/variables.scss' as *;
+
+.budgetCard {
+  padding: $spacing-lg;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+}
+
+.title {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.remaining {
+  font-size: $font-size-sm;
+  color: $color-success;
+  font-weight: $font-weight-medium;
+}
+
+.amountWrap {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: $spacing-lg;
+}
+
+.spentAmount {
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+}
+
+.limit {
+  font-size: $font-size-md;
+  color: $color-text-tertiary;
+  margin-left: $spacing-xs;
+}
+
+.progressWrap {
+  display: flex;
+  align-items: center;
+  margin-bottom: $spacing-sm;
+}
+
+.progressBg {
+  flex: 1;
+  height: 16rpx;
+  background: $color-bg-hover;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: linear-gradient(90deg, $color-success 0%, $color-primary 100%);
+  border-radius: $radius-round;
+  transition: width $transition-base;
+}
+
+.progressWarning {
+  background: linear-gradient(90deg, $color-warning 0%, $color-error 100%);
+}
+
+.percentage {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-left: $spacing-md;
+  min-width: 80rpx;
+  text-align: right;
+}
+
+.percentageWarning {
+  color: $color-error;
+}
+
+.warningText {
+  font-size: $font-size-sm;
+  color: $color-warning;
+  margin-top: $spacing-sm;
+  display: block;
+}

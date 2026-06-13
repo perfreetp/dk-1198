@@ -1,0 +1,57 @@
+@use '@/styles/variables.scss' as *;
+
+.balanceCard {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  padding: $spacing-xl;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-lg;
+}
+
+.memberInfo {
+  background: rgba(255, 255, 255, 0.2);
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-round;
+}
+
+.memberLevel {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.title {
+  font-size: $font-size-md;
+  opacity: 0.9;
+}
+
+.amountWrap {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: $spacing-md;
+}
+
+.amountPrefix {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-medium;
+  margin-right: $spacing-xs;
+}
+
+.amount {
+  font-size: 72rpx;
+  font-weight: $font-weight-bold;
+}
+
+.footer {
+  padding-top: $spacing-md;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.2);
+}
+
+.hint {
+  font-size: $font-size-sm;
+  opacity: 0.8;
+}

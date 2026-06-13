@@ -1,0 +1,51 @@
+@use '@/styles/variables.scss' as *;
+
+.button {
+  @include button-reset;
+  border-radius: $radius-button;
+  transition: all $transition-base;
+  
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.buttonPrimary {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+}
+
+.buttonSecondary {
+  background: $color-bg-hover;
+  color: $color-text-primary;
+}
+
+.buttonOutline {
+  background: transparent;
+  color: $color-primary;
+  border: 2rpx solid $color-primary;
+}
+
+.buttonSm {
+  height: $button-height-sm;
+  font-size: $font-size-sm;
+  padding: 0 $spacing-lg;
+}
+
+.buttonMd {
+  height: $button-height-md;
+  font-size: $font-size-md;
+  padding: 0 $spacing-xl;
+}
+
+.buttonLg {
+  height: $button-height-lg;
+  font-size: $font-size-lg;
+  padding: 0 $spacing-xl;
+}
+
+.buttonDisabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
