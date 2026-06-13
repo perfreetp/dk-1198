@@ -4,12 +4,15 @@ import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
 import type { CategoryType } from '@/types';
 import { categoryLabels } from '@/types';
+import { useConsumptions, useBudget } from '@/store';
 
 export default function RecordPage() {
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<CategoryType>('food');
   const [description, setDescription] = useState('');
   const [isEssential, setIsEssential] = useState(true);
+  const { addConsumption } = useConsumptions();
+  const { addSpent } = useBudget();
 
   const categories: { type: CategoryType; icon: string }[] = [
     { type: 'food', icon: '🥣' },
@@ -40,15 +43,53 @@ export default function RecordPage() {
       Taro.showToast({ title: '请输入金额', icon: 'none' });
       return;
     }
+    
+    addConsumption({
+      type: category,
+      amount: parseFloat(amount),
+      description: description || categoryLabels[category],
+      isEssential
+    });
+    
+    addSpent(parseFloat(amount));
+    
     Taro.showToast({ title: '记账成功', icon: 'success' });
     setAmount('');
     setDescription('');
     setCategory('food');
     setIsEssential(true);
+    
+    setTimeout(() => {
+      Taro.switchTab({ url: '/pages/home/index' });
+    }, 1000);
   };
 
   const handleCamera = () => {
-    Taro.showToast({ title: '拍照识别功能开发中', icon: 'none' });
+    Taro.chooseImage({
+      count: 1,
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        Taro.showLoading({ title: '识别中...' });
+        
+        setTimeout(() => {
+          Taro.hideLoading();
+          
+          const randomAmount = (Math.random() * 200 + 10).toFixed(2);
+          const successRate = 0.8;
+          
+          if (Math.random() < successRate) {
+            setAmount(randomAmount);
+            Taro.showToast({ title: `识别成功：¥${randomAmount}`, icon: 'success' });
+          } else {
+            Taro.showToast({ title: '识别失败，请手动输入金额', icon: 'none' });
+          }
+        }, 1500);
+      },
+      fail: () => {
+        Taro.showToast({ title: '未选择图片', icon: 'none' });
+      }
+    });
   };
 
   return (

@@ -2,34 +2,33 @@ import React, { useState } from 'react';
 import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
-import { mockMemberInfo, mockBudget, mockShoppingList } from '@/data/mockData';
+import { useBudget, useShoppingList, useMemberInfo, useConsumptions } from '@/store';
 import type { ShoppingItem } from '@/types';
 
 export default function MinePage() {
-  const [shoppingList, setShoppingList] = useState<ShoppingItem[]>(mockShoppingList);
+  const { budget, updateBudget } = useBudget();
+  const { shoppingList, toggleItem, addItem } = useShoppingList();
+  const [memberInfo] = useMemberInfo();
+  const { consumptions } = useConsumptions();
+  
   const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [showShoppingModal, setShowShoppingModal] = useState(false);
-  const [newBudget, setNewBudget] = useState(mockBudget.monthlyLimit.toString());
+  const [newBudget, setNewBudget] = useState(budget.monthlyLimit.toString());
   const [newItem, setNewItem] = useState({ name: '', quantity: '1', priority: 'medium' });
 
   const menuItems = [
     { icon: '📊', text: '消费报表', path: '/pages/analysis/index' },
-    { icon: '🎴', text: '养宠卡片', action: () => Taro.showToast({ title: '生成养宠成本卡片', icon: 'success' }) },
+    { icon: '🎴', text: '养宠卡片', action: () => Taro.switchTab({ url: '/pages/analysis/index' }) },
     { icon: '💳', text: '会员卡', action: () => Taro.showToast({ title: '会员卡详情', icon: 'none' }) },
     { icon: '⚙️', text: '设置', action: () => Taro.showToast({ title: '设置页面', icon: 'none' }) }
   ];
-
-  const toggleCheck = (id: string) => {
-    setShoppingList(prev => prev.map(item => 
-      item.id === id ? { ...item, isChecked: !item.isChecked } : item
-    ));
-  };
 
   const saveBudget = () => {
     if (!newBudget || parseInt(newBudget) <= 0) {
       Taro.showToast({ title: '请输入有效的预算金额', icon: 'none' });
       return;
     }
+    updateBudget(parseInt(newBudget));
     Taro.showToast({ title: '预算设置成功', icon: 'success' });
     setShowBudgetModal(false);
   };
@@ -39,15 +38,12 @@ export default function MinePage() {
       Taro.showToast({ title: '请输入物品名称', icon: 'none' });
       return;
     }
-    const item: ShoppingItem = {
-      id: Date.now().toString(),
+    addItem({
       name: newItem.name,
       type: 'food',
       quantity: parseInt(newItem.quantity),
-      priority: newItem.priority as 'high' | 'medium' | 'low',
-      isChecked: false
-    };
-    setShoppingList(prev => [...prev, item]);
+      priority: newItem.priority as 'high' | 'medium' | 'low'
+    });
     setShowShoppingModal(false);
     setNewItem({ name: '', quantity: '1', priority: 'medium' });
     Taro.showToast({ title: '添加成功', icon: 'success' });
@@ -61,6 +57,8 @@ export default function MinePage() {
     }
   };
 
+  const totalSpent = consumptions.reduce((sum, c) => sum + c.amount, 0);
+
   return (
     <View className={styles.page}>
       <View className={styles.header}>
@@ -69,22 +67,22 @@ export default function MinePage() {
             <Text className={styles.avatarIcon}>🐱</Text>
           </View>
           <View className={styles.userDetail}>
-            <Text className={styles.userName}>{mockMemberInfo.name}</Text>
-            <Text className={styles.userLevel}>{mockMemberInfo.memberLevel}</Text>
+            <Text className={styles.userName}>{memberInfo.name}</Text>
+            <Text className={styles.userLevel}>{memberInfo.memberLevel}</Text>
           </View>
         </View>
         <View className={styles.stats}>
           <View className={styles.statItem}>
-            <Text className={styles.statValue}>¥{mockMemberInfo.balance}</Text>
+            <Text className={styles.statValue}>¥{memberInfo.balance}</Text>
             <Text className={styles.statLabel}>余额</Text>
           </View>
           <View className={styles.statItem}>
-            <Text className={styles.statValue}>¥{mockMemberInfo.totalSpent}</Text>
+            <Text className={styles.statValue}>¥{totalSpent}</Text>
             <Text className={styles.statLabel}>累计消费</Text>
           </View>
           <View className={styles.statItem}>
-            <Text className={styles.statValue}>8</Text>
-            <Text className={styles.statLabel}>本月记录</Text>
+            <Text className={styles.statValue}>{consumptions.length}</Text>
+            <Text className={styles.statLabel}>记录数</Text>
           </View>
         </View>
       </View>
@@ -106,19 +104,19 @@ export default function MinePage() {
             <Text className={styles.budgetTitle}>本月消费上限</Text>
             <Text className={styles.budgetEdit} onClick={() => setShowBudgetModal(true)}>修改</Text>
           </View>
-          <Text className={styles.budgetAmount}>¥{mockBudget.monthlyLimit}</Text>
-          <Text className={styles.budgetDesc}>本月已消费 ¥{mockBudget.currentMonthSpent}</Text>
+          <Text className={styles.budgetAmount}>¥{budget.monthlyLimit}</Text>
+          <Text className={styles.budgetDesc}>本月已消费 ¥{budget.currentMonthSpent}</Text>
         </View>
       </View>
 
       <View className={styles.section}>
         <Text className={styles.sectionTitle}>待买清单</Text>
         <View className={styles.shoppingList}>
-          {shoppingList.map(item => (
+          {shoppingList.map((item: ShoppingItem) => (
             <View key={item.id} className={styles.shoppingItem}>
               <View 
                 className={`${styles.checkbox} ${item.isChecked ? styles.checked : ''}`} 
-                onClick={() => toggleCheck(item.id)}
+                onClick={() => toggleItem(item.id)}
               >
                 {item.isChecked && <Text className={styles.checkIcon}>✓</Text>}
               </View>

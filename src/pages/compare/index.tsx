@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text } from '@tarojs/components';
 import styles from './index.module.scss';
-import { mockProducts } from '@/data/mockData';
+import { useProducts } from '@/store';
 import type { CategoryType } from '@/types';
 
 export default function ComparePage() {
   const [activeFilter, setActiveFilter] = useState<CategoryType | 'all'>('all');
+  const { products } = useProducts();
 
   const filters = [
     { key: 'all', label: '全部' },
@@ -15,8 +16,8 @@ export default function ComparePage() {
   ];
 
   const filteredProducts = activeFilter === 'all' 
-    ? mockProducts.filter(p => p.shops.length > 1)
-    : mockProducts.filter(p => p.type === activeFilter && p.shops.length > 1);
+    ? products.filter(p => p.shops.length > 1)
+    : products.filter(p => p.type === activeFilter && p.shops.length > 1);
 
   const getBestPrice = (shops: { shopName: string; price: number }[]) => {
     return Math.min(...shops.map(s => s.price));

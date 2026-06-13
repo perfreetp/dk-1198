@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
-import { mockProducts } from '@/data/mockData';
+import { useProducts } from '@/store';
 import type { Product, CategoryType } from '@/types';
 
 export default function GoodsPage() {
@@ -15,6 +15,7 @@ export default function GoodsPage() {
     spec: '',
     brand: ''
   });
+  const { products, addProduct } = useProducts();
 
   const tabs = [
     { key: 'all', label: '全部' },
@@ -24,14 +25,35 @@ export default function GoodsPage() {
   ];
 
   const filteredProducts = activeTab === 'all' 
-    ? mockProducts 
-    : mockProducts.filter(p => p.type === activeTab);
+    ? products 
+    : products.filter(p => p.type === activeTab);
 
   const handleSubmit = () => {
-    if (!newProduct.name || !newProduct.unitPrice) {
-      Taro.showToast({ title: '请填写必填项', icon: 'none' });
+    if (!newProduct.name) {
+      Taro.showToast({ title: '请填写商品名称', icon: 'none' });
       return;
     }
+    if (!newProduct.unitPrice || parseFloat(newProduct.unitPrice) <= 0) {
+      Taro.showToast({ title: '请填写有效单价', icon: 'none' });
+      return;
+    }
+    if (!newProduct.spec) {
+      Taro.showToast({ title: '请填写规格', icon: 'none' });
+      return;
+    }
+    if (!newProduct.brand) {
+      Taro.showToast({ title: '请填写品牌', icon: 'none' });
+      return;
+    }
+
+    addProduct({
+      name: newProduct.name,
+      type: newProduct.type,
+      unitPrice: parseFloat(newProduct.unitPrice),
+      spec: newProduct.spec,
+      brand: newProduct.brand
+    });
+
     Taro.showToast({ title: '添加成功', icon: 'success' });
     setShowModal(false);
     setNewProduct({ name: '', type: 'food', unitPrice: '', spec: '', brand: '' });
@@ -113,7 +135,7 @@ export default function GoodsPage() {
             </View>
 
             <View className={styles.formItem}>
-              <Text className={styles.formLabel}>品牌</Text>
+              <Text className={styles.formLabel}>品牌 *</Text>
               <Text 
                 className={styles.formInput} 
                 placeholder="输入品牌" 
@@ -122,7 +144,7 @@ export default function GoodsPage() {
             </View>
 
             <View className={styles.formItem}>
-              <Text className={styles.formLabel}>规格</Text>
+              <Text className={styles.formLabel}>规格 *</Text>
               <Text 
                 className={styles.formInput} 
                 placeholder="如：2kg" 

@@ -6,9 +6,16 @@ import CategoryStats from '@/components/CategoryStats';
 import ConsumptionList from '@/components/ConsumptionList';
 import BudgetCard from '@/components/BudgetCard';
 import Card from '@/components/Card';
-import { mockConsumptions, mockMemberInfo, mockBudget, categoryStats } from '@/data/mockData';
+import { useConsumptions, useBudget, useMemberInfo, useAnalysis } from '@/store';
 
 export default function HomePage() {
+  const { consumptions } = useConsumptions();
+  const { budget } = useBudget();
+  const [memberInfo] = useMemberInfo();
+  const { getCategoryStats } = useAnalysis(consumptions);
+  
+  const categoryStats = getCategoryStats();
+
   const quickActions = [
     { icon: '📝', text: '记账', path: '/pages/record/index' },
     { icon: '💰', text: '预算', path: '/pages/mine/index' },
@@ -19,7 +26,7 @@ export default function HomePage() {
   return (
     <View className={styles.page}>
       <View className={`${styles.section}`}>
-        <BalanceCard balance={mockMemberInfo.balance} memberLevel={mockMemberInfo.memberLevel} />
+        <BalanceCard balance={memberInfo.balance} memberLevel={memberInfo.memberLevel} />
       </View>
 
       <View className={`${styles.section}`}>
@@ -36,7 +43,7 @@ export default function HomePage() {
       </View>
 
       <View className={`${styles.section}`}>
-        <BudgetCard budget={mockBudget} />
+        <BudgetCard budget={budget} />
       </View>
 
       <View className={`${styles.section}`}>
@@ -49,7 +56,7 @@ export default function HomePage() {
             <Text className={styles.sectionTitle}>最近消费</Text>
             <Text className={styles.viewAll}>查看全部</Text>
           </View>
-          <ConsumptionList data={mockConsumptions} />
+          <ConsumptionList data={consumptions} />
         </Card>
       </View>
     </View>
